@@ -1,0 +1,497 @@
+Station_ID,Station_Name,Available_Lines,Borough,Physical_Line
+L06,1 Av,L,M,Canarsie
+119,103 St,1,M,Broadway - 7Av
+A18,103 St,B C,M,8th Av - Fulton St
+624,103 St,6,M,Lexington Av
+706,103 St-Corona Plaza,7,Q,Flushing
+A63,104 St,A,Q,Liberty Av
+J14,104 St,J Z,Q,Jamaica
+623,110 St,6,M,Lexington Av
+227,110 St-Malcolm X Plaza,2 3,M,Lenox - White Plains Rd
+A64,111 St,A,Q,Liberty Av
+J13,111 St,J,Q,Jamaica
+705,111 St,7,Q,Flushing
+622,116 St,6,M,Lexington Av
+226,116 St,2 3,M,Lenox - White Plains Rd
+A16,116 St,B C,M,8th Av - Fulton St
+117,116 St-Columbia University,1,M,Broadway - 7Av
+J12,121 St,J Z,Q,Jamaica
+225,125 St,2 3,M,Lenox - White Plains Rd
+116,125 St,1,M,Broadway - 7Av
+A15,125 St,A C B D,M,8th Av - Fulton St
+621,125 St,4 5 6,M,Lexington Av
+A14,135 St,B C,M,8th Av - Fulton St
+224,135 St,2 3,M,Lenox - White Plains Rd
+115,137 St-City College,1,M,Broadway - 7Av
+416,138 St-Grand Concourse,4 5,Bx,Jerome Av
+A31,14 St,A C E,M,8th Av - Fulton St
+D19,14 St,F M,M,6th Av - Culver
+132,14 St,1 2 3,M,Broadway - 7Av
+R20,14 St-Union Sq,N Q R W,M,Broadway - Brighton
+L03,14 St-Union Sq,L,M,Canarsie
+635,14 St-Union Sq,4 5 6,M,Lexington Av
+A12,145 St,A C,M,8th Av - Fulton St
+114,145 St,1,M,Broadway - 7Av
+D13,145 St,B D,M,Concourse
+302,145 St,3,M,Lenox - White Plains Rd
+222,149 St-Grand Concourse,2 5,Bx,Lenox - White Plains Rd
+415,149 St-Grand Concourse,4,Bx,Jerome Av
+F25,15 St-Prospect Park,F G,Bk,6th Av - Culver
+D12,155 St,B D,M,Concourse
+A11,155 St,C,M,8th Av - Fulton St
+113,157 St,1,M,Broadway - 7Av
+414,161 St-Yankee Stadium,4,Bx,Jerome Av
+D11,161 St-Yankee Stadium,B D,Bx,Concourse
+A10,163 St-Amsterdam Av,C,M,8th Av - Fulton St
+413,167 St,4,Bx,Jerome Av
+D10,167 St,B D,Bx,Concourse
+A09,168 St,A C,M,8th Av - Fulton St
+112,168 St-Washington Hts,1,M,Broadway - 7Av
+F02,169 St,F,Q,Queens Blvd
+412,170 St,4,Bx,Jerome Av
+D09,170 St,B D,Bx,Concourse
+215,174 St,2 5,Bx,Lenox - White Plains Rd
+D08,174-175 Sts,B D,Bx,Concourse
+A07,175 St,A,M,8th Av - Fulton St
+410,176 St,4,Bx,Jerome Av
+F30,18 Av,F,Bk,6th Av - Culver
+B19,18 Av,D,Bk,West End
+N05,18 Av,N,Bk,Sea Beach
+131,18 St,1,M,Broadway - 7Av
+111,181 St,1,M,Broadway - 7Av
+A06,181 St,A,M,8th Av - Fulton St
+D06,182-183 Sts,B D,Bx,Concourse
+408,183 St,4,Bx,Jerome Av
+A05,190 St,A,M,8th Av - Fulton St
+110,191 St,1,M,Broadway - 7Av
+F14,2 Av,F,M,6th Av - Culver
+N06,20 Av,N,Bk,Sea Beach
+B20,20 Av,D,Bk,West End
+108,207 St,1,M,Broadway - 7Av
+G24,21 St,G,Q,Crosstown
+B04,21 St-Queensbridge,M,Q,63rd St
+107,215 St,1,M,Broadway - 7Av
+207,219 St,2 5,Bx,Lenox - White Plains Rd
+206,225 St,2 5,Bx,Lenox - White Plains Rd
+D18,23 St,F M,M,6th Av - Culver
+130,23 St,1,M,Broadway - 7Av
+634,23 St,6,M,Lexington Av
+A30,23 St,C E,M,8th Av - Fulton St
+R19,23 St,R W,M,Broadway - Brighton
+104,231 St,1,Bx,Broadway - 7Av
+205,233 St,2 5,Bx,Lenox - White Plains Rd
+103,238 St,1,Bx,Broadway - 7Av
+B22,25 Av,D,Bk,West End
+R35,25 St,R,Bk,4th Av
+129,28 St,1,M,Broadway - 7Av
+R18,28 St,R W,M,Broadway - Brighton
+633,28 St,6,M,Lexington Av
+L05,3 Av,L,M,Canarsie
+619,3 Av-138 St,6,Bx,Pelham
+221,3 Av-149 St,2 5,Bx,Lenox - White Plains Rd
+R04,30 Av,N W,Q,Astoria
+632,33 St,6,M,Lexington Av
+716,33 St-Rawson St,7,Q,Flushing
+R17,34 St-Herald Sq,N Q R W,M,Broadway - Brighton
+D17,34 St-Herald Sq,B D F M,M,6th Av - Culver
+726,34 St-Hudson Yards,7,M,Flushing
+128,34 St-Penn Station,1 2 3,M,Broadway - 7Av
+A28,34 St-Penn Station,A C E,M,8th Av - Fulton St
+R06,36 Av,N W,Q,Astoria
+G20,36 St,M R,Q,Queens Blvd
+R36,36 St,D N R,Bk,4th Av
+R08,39 Av-Dutch Kills,N W,Q,Astoria
+F23,4 Av-9 St,F G,Bk,6th Av - Culver
+R33,4 Av-9 St,R,Bk,4th Av
+715,40 St-Lowery St,7,Q,Flushing
+D16,42 St-Bryant Pk,B D F M,M,6th Av - Culver
+A27,42 St-Port Authority Bus Terminal,A C E,M,8th Av - Fulton St
+R39,45 St,R,Bk,4th Av
+G18,46 St,M R,Q,Queens Blvd
+714,46 St-Bliss St,7,Q,Flushing
+D15,47-50 Sts-Rockefeller Ctr,B D F M,M,6th Av - Culver
+R15,49 St,N R W,M,Broadway - Brighton
+724,5 Av,7,M,Flushing
+F12,5 Av/53 St,E F,M,Queens Blvd
+R13,5 Av/59 St,N R W,M,Astoria
+A25,50 St,C E,M,8th Av - Fulton St
+126,50 St,1,M,Broadway - 7Av
+B14,50 St,D,Bk,West End
+630,51 St,6,M,Lexington Av
+713,52 St,7,Q,Flushing
+R40,53 St,R,Bk,4th Av
+B15,55 St,D,Bk,West End
+B10,57 St,M,M,6th Av - Culver
+R14,57 St-7 Av,N Q R W,M,Broadway - Brighton
+629,59 St,4 5 6,M,Lexington Av
+R41,59 St,N R,Bk,4th Av
+A24,59 St-Columbus Circle,A C B D,M,8th Av - Fulton St
+125,59 St-Columbus Circle,1,M,Broadway - 7Av
+L02,6 Av,L,M,Canarsie
+712,61 St-Woodside,7,Q,Flushing
+B16,62 St,D,Bk,West End
+G10,63 Dr-Rego Park,M R,Q,Queens Blvd
+G15,65 St,M R,Q,Queens Blvd
+124,66 St-Lincoln Center,1,M,Broadway - 7Av
+G09,67 Av,M R,Q,Queens Blvd
+628,68 St-Hunter College,6,M,Lexington Av
+711,69 St,7,Q,Flushing
+D25,7 Av,B Q,Bk,Broadway - Brighton
+F24,7 Av,F G,Bk,6th Av - Culver
+D14,7 Av,B D E,M,Queens Blvd
+B17,71 St,D,Bk,West End
+A22,72 St,B C,M,8th Av - Fulton St
+123,72 St,1 2 3,M,Broadway - 7Av
+Q03,72 St,Q,M,Second Av
+710,74 St-Broadway,7,Q,Flushing
+F07,75 Av,E F,Q,Queens Blvd
+J17,75 St-Elderts Ln,J Z,Q,Jamaica
+627,77 St,6,M,Lexington Av
+R43,77 St,R,Bk,4th Av
+122,79 St,1,M,Broadway - 7Av
+B18,79 St,D,Bk,West End
+N02,8 Av,N,Bk,Sea Beach
+L01,8 Av,L,M,Canarsie
+R21,8 St-NYU,R W,M,Broadway - Brighton
+A59,80 St,A,Q,Liberty Av
+A21,81 St-Museum of Natural History,B C,M,8th Av - Fulton St
+709,82 St-Jackson Hts,7,Q,Flushing
+J16,85 St-Forest Pkwy,J,Q,Jamaica
+121,86 St,1,M,Broadway - 7Av
+Q04,86 St,Q,M,Second Av
+A20,86 St,B C,M,8th Av - Fulton St
+N10,86 St,N,Bk,Sea Beach
+R44,86 St,R,Bk,4th Av
+626,86 St,4 5 6,M,Lexington Av
+A60,88 St,A,Q,Liberty Av
+B12,9 Av,D,Bk,West End
+708,90 St-Elmhurst Av,7,Q,Flushing
+120,96 St,1 2 3,M,Broadway - 7Av
+625,96 St,6,M,Lexington Av
+Q05,96 St,Q,M,Second Av
+A19,96 St,B C,M,8th Av - Fulton St
+J24,Alabama Av,J Z,Bk,Jamaica
+210,Allerton Av,2 5,Bx,Lenox - White Plains Rd
+S17,Annadale,SIR,SI,Staten Island
+H01,Aqueduct Racetrack,A,Q,Rockaway
+H02,Aqueduct-N Conduit Av,A,Q,Rockaway
+S11,Arthur Kill,SIR,SI,Staten Island
+636,Astor Pl,6,M,Lexington Av
+R03,Astoria Blvd,N W,Q,Astoria
+R01,Astoria-Ditmars Blvd,N W,Q,Astoria
+L24,Atlantic Av,L,Bk,Canarsie
+D24,Atlantic Av-Barclays Ctr,B Q,Bk,Broadway - Brighton
+235,Atlantic Av-Barclays Ctr,2 3 4 5,Bk,Eastern Pky
+R31,Atlantic Av-Barclays Ctr,D N R,Bk,4th Av
+D32,Avenue H,Q,Bk,Broadway - Brighton
+F31,Avenue I,F,Bk,6th Av - Culver
+D33,Avenue J,Q,Bk,Broadway - Brighton
+D34,Avenue M,Q,Bk,Broadway - Brighton
+F33,Avenue N,F,Bk,6th Av - Culver
+F34,Avenue P,F,Bk,6th Av - Culver
+F36,Avenue U,F,Bk,6th Av - Culver
+N09,Avenue U,N,Bk,Sea Beach
+D37,Avenue U,Q,Bk,Broadway - Brighton
+F38,Avenue X,F,Bk,6th Av - Culver
+B23,Bay 50 St,D,Bk,West End
+N07,Bay Pkwy,N,Bk,Sea Beach
+B21,Bay Pkwy,D,Bk,West End
+F32,Bay Pkwy,F,Bk,6th Av - Culver
+R42,Bay Ridge Av,R,Bk,4th Av
+R45,Bay Ridge-95 St,R,Bk,4th Av
+S20,Bay Terrace,SIR,SI,Staten Island
+502,Baychester Av,5,Bx,Dyre Av
+H14,Beach 105 St,A S,Q,Rockaway
+H10,Beach 25 St,A,Q,Rockaway
+H09,Beach 36 St,A,Q,Rockaway
+H08,Beach 44 St,A,Q,Rockaway
+H07,Beach 60 St,A,Q,Rockaway
+H06,Beach 67 St,A,Q,Rockaway
+H12,Beach 90 St,A S,Q,Rockaway
+H13,Beach 98 St,A S,Q,Rockaway
+L08,Bedford Av,L,Bk,Canarsie
+D03,Bedford Park Blvd,B D,Bx,Concourse
+405,Bedford Park Blvd-Lehman College,4,Bx,Jerome Av
+G33,Bedford-Nostrand Avs,G,Bk,Crosstown
+F20,Bergen St,F G,Bk,6th Av - Culver
+236,Bergen St,2 3,Bk,Eastern Pky
+D29,Beverley Rd,Q,Bk,Broadway - Brighton
+245,Beverly Rd,2 5,Bk,Nostrand
+637,Bleecker St,6,M,Lexington Av
+423,Borough Hall,4 5,Bk,Eastern Pky
+232,Borough Hall,2 3,Bk,Clark St
+S04,Botanic Garden,S,Bk,Franklin Shuttle
+M19,Bowery,J Z,M,Jamaica
+420,Bowling Green,4 5,M,Lexington Av
+F05,Briarwood,E F,Q,Queens Blvd
+D40,Brighton Beach,B Q,Bk,Broadway - Brighton
+H04,Broad Channel,A S,Q,Rockaway
+M23,Broad St,J Z,M,Jamaica
+R05,Broadway,N W,Q,Astoria
+G30,Broadway,G,Bk,Crosstown
+A51,Broadway Junction,A C,Bk,8th Av - Fulton St
+J27,Broadway Junction,J Z,Bk,Jamaica
+L22,Broadway Junction,L,Bk,Canarsie
+D21,Broadway-Lafayette St,B D F M,M,6th Av - Culver
+212,Bronx Park East,2 5,Bx,Lenox - White Plains Rd
+618,Brook Av,6,Bx,Pelham
+640,Brooklyn Bridge-City Hall,4 5 6,M,Lexington Av
+602,Buhre Av,6,Bx,Pelham
+209,Burke Av,2 5,Bx,Lenox - White Plains Rd
+409,Burnside Av,4,Bx,Jerome Av
+L21,Bushwick Av-Aberdeen St,L,Bk,Canarsie
+Q01,Canal St,N Q,M,Manhattan Bridge
+R23,Canal St,R W,M,Broadway
+M20,Canal St,J Z,M,Jamaica
+135,Canal St,1,M,Broadway - 7Av
+639,Canal St,6,M,Lexington Av
+A34,Canal St,A C E,M,8th Av - Fulton St
+L29,Canarsie-Rockaway Pkwy,L,Bk,Canarsie
+F21,Carroll St,F G,Bk,6th Av - Culver
+607,Castle Hill Av,6,Bx,Pelham
+118,Cathedral Pkwy (110 St),1,M,Broadway - 7Av
+A17,Cathedral Pkwy (110 St),B C,M,8th Av - Fulton St
+M10,Central Av,M,Bk,Myrtle Av
+A36,Chambers St,A C,M,8th Av - Fulton St
+M21,Chambers St,J Z,M,Jamaica
+137,Chambers St,1 2 3,M,Broadway - 7Av
+J28,Chauncey St,J Z,Bk,Jamaica
+133,Christopher St-Stonewall,1,M,Broadway - 7Av
+F27,Church Av,F G,Bk,6th Av - Culver
+244,Church Av,2 5,Bk,Nostrand
+D28,Church Av,B Q,Bk,Broadway - Brighton
+R24,City Hall,R W,M,Broadway
+231,Clark St,2 3,Bk,Clark St
+G34,Classon Av,G,Bk,Crosstown
+J22,Cleveland St,J,Bk,Jamaica
+S28,Clifton,SIR,SI,Staten Island
+A44,Clinton-Washington Avs,C,Bk,8th Av - Fulton St
+G35,Clinton-Washington Avs,G,Bk,Crosstown
+D43,Coney Island-Stillwell Av,D F N Q,Bk,Sea Beach / West End / Culver / Brighton
+D30,Cortelyou Rd,Q,Bk,Broadway - Brighton
+R25,Cortlandt St,R W,M,Broadway
+719,Court Sq,7,Q,Flushing
+G22,Court Sq,G,Q,Crosstown
+F09,Court Sq-23 St,E F,Q,Queens Blvd
+R28,Court St,R,Bk,Broadway
+J20,Crescent St,J Z,Bk,Jamaica
+250,Crown Hts-Utica Av,3 4,Bk,Eastern Pky
+617,Cypress Av,6,Bx,Pelham
+J19,Cypress Hills,J,Bk,Jamaica
+L16,DeKalb Av,L,Bk,Canarsie
+R30,DeKalb Av,B Q R,Bk,Broadway - Brighton
+M18,Delancey St-Essex St,J Z M,M,Jamaica
+F15,Delancey St-Essex St,F,M,6th Av - Culver
+F29,Ditmas Av,F,Bk,6th Av - Culver
+S25,Dongan Hills,SIR,SI,Staten Island
+109,Dyckman St,1,M,Broadway - 7Av
+A03,Dyckman St,A,M,8th Av - Fulton St
+616,E 143 St-St Mary's St,6,Bx,Pelham
+615,E 149 St,6,Bx,Pelham
+213,E 180 St,2 5,Bx,Lenox - White Plains Rd
+L28,East 105 St,L,Bk,Canarsie
+F16,East Broadway,F,M,6th Av - Culver
+501,Eastchester-Dyre Av,5,Bx,Dyre Av
+238,Eastern Pkwy-Brooklyn Museum,2 3,Bk,Eastern Pky
+611,Elder Av,6,Bx,Pelham
+G13,Elmhurst Av,M R,Q,Queens Blvd
+S18,Eltingville,SIR,SI,Staten Island
+A55,Euclid Av,A C,Bk,8th Av - Fulton St
+H11,Far Rockaway-Mott Av,A,Q,Rockaway
+247,Flatbush Av-Brooklyn College,2 5,Bk,Nostrand
+G31,Flushing Av,G,Bk,Crosstown
+M12,Flushing Av,J M,Bk,Jamaica
+701,Flushing-Main St,7,Q,Flushing
+407,Fordham Rd,4,Bx,Jerome Av
+D05,Fordham Rd,B D,Bx,Concourse
+M05,Forest Av,M,Q,Myrtle Av
+G08,Forest Hills-71 Av,E F M R,Q,Queens Blvd
+B13,Fort Hamilton Pkwy,D,Bk,West End
+N03,Fort Hamilton Pkwy,N,Bk,Sea Beach
+F26,Fort Hamilton Pkwy,F G,Bk,6th Av - Culver
+S01,Franklin Av,S,Bk,Franklin Shuttle
+A45,Franklin Av,C,Bk,8th Av - Fulton St
+239,Franklin Av-Medgar Evers College,2 3 4 5,Bk,Eastern Pky
+136,Franklin St,1,M,Broadway - 7Av
+216,Freeman St,2 5,Bx,Lenox - White Plains Rd
+M04,Fresh Pond Rd,M,Q,Myrtle Av
+G36,Fulton St,G,Bk,Crosstown
+418,Fulton St,4 5,M,Lexington Av
+229,Fulton St,2 3,M,Clark St
+M22,Fulton St,J Z,M,Jamaica
+A38,Fulton St,A C,M,8th Av - Fulton St
+J30,Gates Av,J Z,Bk,Jamaica
+L11,Graham Av,L,Bk,Canarsie
+237,Grand Army Plaza,2 3,Bk,Eastern Pky
+G12,Grand Av-Newtown,M R,Q,Queens Blvd
+723,Grand Central-42 St,7,M,Flushing
+631,Grand Central-42 St,4 5 6,M,Lexington Av
+901,Grand Central-42 St,S,M,Lexington - Shuttle
+D22,Grand St,B D,M,6th Av - Culver
+L12,Grand St,L,Bk,Canarsie
+A57,Grant Av,A,Bk,Liberty Av
+S23,Grant City,SIR,SI,Staten Island
+S27,Grasmere,SIR,SI,Staten Island
+S19,Great Kills,SIR,SI,Staten Island
+G26,Greenpoint Av,G,Bk,Crosstown
+208,Gun Hill Rd,2 5,Bx,Lenox - White Plains Rd
+503,Gun Hill Rd,5,Bx,Dyre Av
+L19,Halsey St,L,Q,Canarsie
+J29,Halsey St,J,Bk,Jamaica
+301,Harlem-148 St,3,M,Lenox - White Plains Rd
+M14,Hewes St,J M,Bk,Jamaica
+A40,High St,A C,Bk,8th Av - Fulton St
+134,Houston St,1,M,Broadway - 7Av
+H03,Howard Beach-JFK Airport,A,Q,Rockaway
+233,Hoyt St,2 3,Bk,Eastern Pky
+A42,Hoyt-Schermerhorn Sts,A C G,Bk,8th Av - Fulton St
+S16,Huguenot,SIR,SI,Staten Island
+720,Hunters Point Av,7,Q,Flushing
+613,Hunts Point Av,6,Bx,Pelham
+218,Intervale Av,2 5,Bx,Lenox - White Plains Rd
+A02,Inwood-207 St,A,M,8th Av - Fulton St
+220,Jackson Av,2 5,Bx,Lenox - White Plains Rd
+G14,Jackson Hts-Roosevelt Av,E F M R,Q,Queens Blvd
+G05,Jamaica Center-Parsons/Archer,E J Z,Q,Queens - Archer
+F01,Jamaica-179 St,F,Q,Queens Blvd
+G07,Jamaica-Van Wyck,E,Q,Queens - Archer
+R29,Jay St-MetroTech,R,Bk,Broadway
+A41,Jay St-MetroTech,A C F,Bk,8th Av - Fulton St
+S24,Jefferson Av,SIR,SI,Staten Island
+L15,Jefferson St,L,Bk,Canarsie
+707,Junction Blvd,7,Q,Flushing
+254,Junius St,3,Bk,Eastern Pky
+F06,Kew Gardens-Union Tpke,E F,Q,Queens Blvd
+N08,Kings Hwy,N,Bk,Sea Beach
+F35,Kings Hwy,F,Bk,6th Av - Culver
+D35,Kings Hwy,B Q,Bk,Broadway - Brighton
+406,Kingsbridge Rd,4,Bx,Jerome Av
+D04,Kingsbridge Rd,B D,Bx,Concourse
+249,Kingston Av,3,Bk,Eastern Pky
+A47,Kingston-Throop Avs,C,Bk,8th Av - Fulton St
+M09,Knickerbocker Av,M,Bk,Myrtle Av
+J31,Kosciuszko St,J,Bk,Jamaica
+A43,Lafayette Av,C,Bk,8th Av - Fulton St
+F11,Lexington Av/53 St,E F,M,Queens Blvd
+R11,Lexington Av/59 St,N R W,M,Astoria
+B08,Lexington Av/63 St,M Q,M,63rd St
+A52,Liberty Av,C,Bk,8th Av - Fulton St
+L26,Livonia Av,L,Bk,Canarsie
+614,Longwood Av,6,Bx,Pelham
+M13,Lorimer St,J M,Bk,Jamaica
+L10,Lorimer St,L,Bk,Canarsie
+106,Marble Hill-225 St,1,M,Broadway - 7Av
+M16,Marcy Av,J Z M,Bk,Jamaica
+G29,Metropolitan Av,G,Bk,Crosstown
+702,Mets-Willets Point,7,Q,Flushing
+M01,Middle Village-Metropolitan Av,M,Q,Myrtle Av
+603,Middletown Rd,6,Bx,Pelham
+L13,Montrose Av,L,Bk,Canarsie
+L14,Morgan Av,L,Bk,Canarsie
+505,Morris Park,5,Bx,Dyre Av
+610,Morrison Av-Soundview,6,Bx,Pelham
+402,Mosholu Pkwy,4,Bx,Jerome Av
+411,Mt Eden Av,4,Bx,Jerome Av
+M11,Myrtle Av,J Z M,Bk,Jamaica
+G32,Myrtle-Willoughby Avs,G,Bk,Crosstown
+L17,Myrtle-Wyckoff Avs,L,Bk,Canarsie
+M08,Myrtle-Wyckoff Avs,M,Bk,Myrtle Av
+G28,Nassau Av,G,Bk,Crosstown
+D38,Neck Rd,Q,Bk,Broadway - Brighton
+F39,Neptune Av,F,Bk,6th Av - Culver
+204,Nereid Av,2 5,Bx,Lenox - White Plains Rd
+234,Nevins St,2 3 4 5,Bk,Eastern Pky
+S22,New Dorp,SIR,SI,Staten Island
+257,New Lots Av,3,Bk,Eastern Pky
+L27,New Lots Av,L,Bk,Canarsie
+N04,New Utrecht Av,N,Bk,Sea Beach
+246,Newkirk Av-Little Haiti,2 5,Bk,Nostrand
+D31,Newkirk Plaza,B Q,Bk,Broadway - Brighton
+G16,Northern Blvd,M R,Q,Queens Blvd
+J21,Norwood Av,J Z,Bk,Jamaica
+D01,Norwood-205 St,D,Bx,Concourse
+248,Nostrand Av,3,Bk,Eastern Pky
+A46,Nostrand Av,A C,Bk,8th Av - Fulton St
+S21,Oakwood Heights,SIR,SI,Staten Island
+D41,Ocean Pkwy,Q,Bk,Broadway - Brighton
+S26,Old Town,SIR,SI,Staten Island
+A65,Ozone Park-Lefferts Blvd,A,Q,Liberty Av
+S03,Park Pl,S,Bk,Franklin Shuttle
+228,Park Place,2 3,M,Clark St
+608,Parkchester,6,Bx,Pelham
+D27,Parkside Av,Q,Bk,Broadway - Brighton
+F03,Parsons Blvd,F,Q,Queens Blvd
+601,Pelham Bay Park,6,Bx,Pelham
+504,Pelham Pkwy,5,Bx,Dyre Av
+211,Pelham Pkwy,2 5,Bx,Lenox - White Plains Rd
+255,Pennsylvania Av,3,Bk,Eastern Pky
+S14,Pleasant Plains,SIR,SI,Staten Island
+241,President St-Medgar Evers College,2 5,Bk,Nostrand
+R22,Prince St,R W,M,Broadway - Brighton
+S15,Prince's Bay,SIR,SI,Staten Island
+R34,Prospect Av,R,Bk,4th Av
+219,Prospect Av,2 5,Bx,Lenox - White Plains Rd
+D26,Prospect Park,B Q S,Bk,Broadway - Brighton
+G21,Queens Plaza,E F R,Q,Queens Blvd
+R09,Queensboro Plaza,N W,Q,Astoria
+718,Queensboro Plaza,7,Q,Flushing
+A49,Ralph Av,C,Bk,8th Av - Fulton St
+139,Rector St,1,M,Broadway - 7Av
+R26,Rector St,R W,M,Broadway
+S13,Richmond Valley,SIR,SI,Staten Island
+253,Rockaway Av,3,Bk,Eastern Pky
+A50,Rockaway Av,C,Bk,8th Av - Fulton St
+A61,Rockaway Blvd,A,Q,Liberty Av
+H15,Rockaway Park-Beach 116 St,A S,Q,Rockaway
+B06,Roosevelt Island,M,M,63rd St
+252,Saratoga Av,3,Bk,Eastern Pky
+M06,Seneca Av,M,Q,Myrtle Av
+D39,Sheepshead Bay,B Q,Bk,Broadway - Brighton
+A54,Shepherd Av,C,Bk,8th Av - Fulton St
+217,Simpson St,2 5,Bx,Lenox - White Plains Rd
+F22,Smith-9 Sts,F G,Bk,6th Av - Culver
+142,South Ferry,1,M,Broadway - 7Av
+A33,Spring St,C E,M,8th Av - Fulton St
+638,Spring St,6,M,Lexington Av
+S31,St George,SIR,SI,Staten Island
+609,St Lawrence Av,6,Bx,Pelham
+S29,Stapleton,SIR,SI,Staten Island
+G19,Steinway St,M R,Q,Queens Blvd
+242,Sterling St,2 5,Bk,Nostrand
+F04,Sutphin Blvd,F,Q,Queens Blvd
+G06,Sutphin Blvd-Archer Av-JFK Airport,E J Z,Q,Queens - Archer
+L25,Sutter Av,L,Bk,Canarsie
+251,Sutter Av-Rutland Rd,3,Bk,Eastern Pky
+725,Times Sq-42 St,7,M,Flushing
+902,Times Sq-42 St,S,M,Lexington - Shuttle
+127,Times Sq-42 St,1 2 3,M,Broadway - 7Av
+R16,Times Sq-42 St,N Q R W,M,Broadway - Brighton
+S30,Tompkinsville,SIR,SI,Staten Island
+S09,Tottenville,SIR,SI,Staten Island
+D07,Tremont Av,B D,Bx,Concourse
+R32,Union St,R,Bk,4th Av
+A48,Utica Av,A C,Bk,8th Av - Fulton St
+101,Van Cortlandt Park-242 St,1,Bx,Broadway - 7Av
+J23,Van Siclen Av,J Z,Bk,Jamaica
+256,Van Siclen Av,3,Bk,Eastern Pky
+A53,Van Siclen Av,C,Bk,8th Av - Fulton St
+721,Vernon Blvd-Jackson Av,7,Q,Flushing
+A32,W 4 St-Wash Sq,A C E,M,8th Av - Fulton St
+D20,W 4 St-Wash Sq,B D F M,M,6th Av - Culver
+D42,W 8 St-NY Aquarium,F Q,Bk,Broadway - Brighton
+138,WTC Cortlandt,1,M,Broadway - 7Av
+201,Wakefield-241 St,2,Bx,Lenox - White Plains Rd
+230,Wall St,2 3,M,Clark St
+419,Wall St,4 5,M,Lexington Av
+214,West Farms Sq-E Tremont Av,2 5,Bx,Lenox - White Plains Rd
+604,Westchester Sq-E Tremont Av,6,Bx,Pelham
+R27,Whitehall St-South Ferry,R W,M,Broadway
+612,Whitlock Av,6,Bx,Pelham
+L20,Wilson Av,L,Bk,Canarsie
+243,Winthrop St,2 5,Bk,Nostrand
+G11,Woodhaven Blvd,M R,Q,Queens Blvd
+J15,Woodhaven Blvd,J Z,Q,Jamaica
+401,Woodlawn,4,Bx,Jerome Av
+E01,World Trade Center,E,M,8th Av - Fulton St
+F18,York St,F,Bk,6th Av - Culver
+606,Zerega Av,6,Bx,Pelham
