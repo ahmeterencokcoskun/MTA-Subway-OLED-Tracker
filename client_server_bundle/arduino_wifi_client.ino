@@ -19,17 +19,17 @@ const unsigned long HEARTBEAT_PERIOD_MS = 3000;
 const unsigned long HEARTBEAT_PULSE_MS = 120;
 const unsigned long HTTP_READ_TIMEOUT_MS = 5000;
 const unsigned long ALERT_PREVIEW_MS = 10000;
-const unsigned long STALE_DATA_MS = 90000;
+const unsigned long STALE_DATA_MS = 90000;  // Data is considered stale after 90 seconds without a successful fetch.
 
 const size_t MAX_JSON_BODY = 768;
 const size_t MAX_ALERT_LEN = 200;
 
-// Network settings
-const char WIFI_SSID[] = "DESKTOP-75QM09J 4825";
-const char WIFI_PASSWORD[] = "M3k94#74";
+// Network settings — replace with your own credentials before flashing.
+const char WIFI_SSID[] = "YOUR_WIFI_SSID";
+const char WIFI_PASSWORD[] = "YOUR_WIFI_PASSWORD";
 // Optional fallback network (used when primary SSID is unreachable).
-const char WIFI_SSID_2[] = "SUPEROBLINE_Wİ-Fİ_1151";
-const char WIFI_PASSWORD_2[] = "mFnEm48J8f";
+const char WIFI_SSID_2[] = "YOUR_FALLBACK_SSID";
+const char WIFI_PASSWORD_2[] = "YOUR_FALLBACK_PASSWORD";
 
 // Local hotspot/LAN endpoint on your PC (192.168.137.1:8000).
 const bool USE_TLS = false;

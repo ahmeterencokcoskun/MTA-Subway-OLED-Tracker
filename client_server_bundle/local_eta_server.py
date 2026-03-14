@@ -261,7 +261,7 @@ def push_to_arduino(
     serial_port: Optional[str] = Query(None),
 ):
     if not serial_port or not serial_port.strip():
-        raise HTTPException(status_code=400, detail="serial_port gerekli (ornek: COM3)")
+        raise HTTPException(status_code=400, detail="serial_port is required (example: COM3)")
 
     cfg = TrackerConfig()
     cfg.arduino_port = serial_port.strip()

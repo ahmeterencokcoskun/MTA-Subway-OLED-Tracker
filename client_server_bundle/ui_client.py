@@ -120,12 +120,12 @@ class EtaUiClient(tk.Tk):
         ttk.Label(query_box, text="Stop IDs (optional, comma-separated)").grid(row=1, column=0, columnspan=3, sticky="w", pady=(10, 0))
         ttk.Entry(query_box, textvariable=self.stop_ids_var, width=48).grid(row=1, column=3, columnspan=3, sticky="we", padx=(6, 0), pady=(10, 0))
 
-        ttk.Label(query_box, text="Serial Port (opsiyonel, seri gonderim)").grid(row=2, column=0, sticky="w", pady=(10, 0))
+        ttk.Label(query_box, text="Serial Port (optional, for serial push)").grid(row=2, column=0, sticky="w", pady=(10, 0))
         ttk.Entry(query_box, textvariable=self.arduino_port_var, width=12).grid(row=2, column=1, sticky="w", padx=(6, 18), pady=(10, 0))
 
-        ttk.Button(query_box, text="Sorgula (ETA)", command=self.fetch_eta).grid(row=3, column=0, columnspan=2, sticky="we", pady=(12, 0))
-        ttk.Button(query_box, text="Arduinoya Gonder", command=self.send_to_arduino).grid(row=3, column=2, columnspan=2, sticky="we", pady=(12, 0), padx=(6, 6))
-        ttk.Button(query_box, text="Hat+Durak Listesi", command=self.show_catalog).grid(row=3, column=4, columnspan=2, sticky="we", pady=(12, 0))
+        ttk.Button(query_box, text="Fetch ETA", command=self.fetch_eta).grid(row=3, column=0, columnspan=2, sticky="we", pady=(12, 0))
+        ttk.Button(query_box, text="Send to Arduino", command=self.send_to_arduino).grid(row=3, column=2, columnspan=2, sticky="we", pady=(12, 0), padx=(6, 6))
+        ttk.Button(query_box, text="Route+Station List", command=self.show_catalog).grid(row=3, column=4, columnspan=2, sticky="we", pady=(12, 0))
 
         ttk.Checkbutton(query_box, text="Auto Refresh", variable=self.auto_refresh_var, command=self.toggle_auto_refresh).grid(row=4, column=0, sticky="w", pady=(10, 0))
         ttk.Label(query_box, text="Interval").grid(row=4, column=1, sticky="e", pady=(10, 0))
@@ -138,7 +138,7 @@ class EtaUiClient(tk.Tk):
         ).grid(row=4, column=2, sticky="w", pady=(10, 0), padx=(6, 0))
         ttk.Label(query_box, textvariable=self.last_update_var).grid(row=4, column=3, columnspan=3, sticky="w", pady=(10, 0))
 
-        fav_box = ttk.LabelFrame(root, text="Favoriler", padding=10)
+        fav_box = ttk.LabelFrame(root, text="Favorites", padding=10)
         fav_box.pack(fill=tk.X, pady=(0, 10))
 
         ttk.Label(fav_box, text="Favorite").grid(row=0, column=0, sticky="w")
@@ -154,10 +154,10 @@ class EtaUiClient(tk.Tk):
         self.output = tk.Text(output_box, wrap=tk.WORD, font=("Consolas", 10), height=14)
         self.output.pack(fill=tk.BOTH, expand=True)
 
-        alerts_box = ttk.LabelFrame(root, text="Alert Gecmisi", padding=10)
+        alerts_box = ttk.LabelFrame(root, text="Alert History", padding=10)
         alerts_box.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
 
-        ttk.Checkbutton(alerts_box, text="Sadece alertli", variable=self.alert_only_var, command=self.refresh_alert_history_view).pack(anchor="w")
+        ttk.Checkbutton(alerts_box, text="Show alerts only", variable=self.alert_only_var, command=self.refresh_alert_history_view).pack(anchor="w")
         self.alert_text = tk.Text(alerts_box, wrap=tk.WORD, font=("Consolas", 9), height=8)
         self.alert_text.pack(fill=tk.BOTH, expand=True)
 
@@ -249,7 +249,7 @@ class EtaUiClient(tk.Tk):
     def _is_port_in_use(self, port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            sock.bind(("0.0.0.0", port))
+            sock.bind(("127.0.0.1", port))
             return False
         except OSError:
             return True
@@ -354,10 +354,10 @@ class EtaUiClient(tk.Tk):
             details = self._inspect_port_8000_data()
             if not details:
                 self.append_output("No LISTENING process on port 8000.")
-                self.set_status("Port 8000 bos.")
+                self.set_status("Port 8000 is free.")
                 return
             self.append_output(json.dumps(details, indent=2, ensure_ascii=True))
-            self.set_status(f"Port 8000 inspector: {len(details)} process found.")
+            self.set_status(f"Port 8000 inspector: {len(details)} process(es) found.")
         except Exception as exc:
             self.set_status(f"Port inspector failed: {exc}")
 
@@ -434,8 +434,8 @@ class EtaUiClient(tk.Tk):
 
         if self._is_port_in_use(port):
             self.set_status(
-                f"Port {port} kullanimda ama {host} uzerinden health yanit vermiyor. "
-                "Muhtemel cakisan process var."
+                f"Port {port} is in use but {host} is not responding to health checks. "
+                "Possible conflicting process."
             )
             self.append_output(
                 "Port conflict detected. Stop the existing process on port "
@@ -520,9 +520,9 @@ class EtaUiClient(tk.Tk):
             self.all_routes = routes
             self._refresh_route_options(preferred=self.route_var.get().strip().upper())
             self.append_output(json.dumps(payload, indent=2, ensure_ascii=True))
-            self.set_status(f"{payload.get('count', len(routes))} hat yuklendi.")
+            self.set_status(f"{payload.get('count', len(routes))} routes loaded.")
         except Exception as exc:
-            self.set_status(f"Hat listesi alinamadi: {exc}")
+            self.set_status(f"Failed to load route list: {exc}")
 
     def load_stations(self):
         try:
@@ -532,9 +532,9 @@ class EtaUiClient(tk.Tk):
             self.station_index = {item["name"]: item for item in stations}
             self._refresh_station_options()
             self.append_output(json.dumps(payload, indent=2, ensure_ascii=True))
-            self.set_status(f"{payload.get('count', len(stations))} durak yuklendi.")
+            self.set_status(f"{payload.get('count', len(stations))} stations loaded.")
         except Exception as exc:
-            self.set_status(f"Durak listesi alinamadi: {exc}")
+            self.set_status(f"Failed to load station list: {exc}")
 
     def on_station_selected(self, _event=None):
         station_name = self.station_var.get().strip().upper()
@@ -563,7 +563,7 @@ class EtaUiClient(tk.Tk):
             "stations_preview": self.station_catalog[:30],
         }
         self.append_output(json.dumps(summary, indent=2, ensure_ascii=True))
-        self.set_status("Hat ve durak katalogu gosterildi (onizleme).")
+        self.set_status("Route and station catalog displayed (preview).")
 
     def _record_alert_history(self, payload):
         entry = {
@@ -669,13 +669,13 @@ class EtaUiClient(tk.Tk):
             response.raise_for_status()
             active_result = response.json()
         except Exception as exc:
-            self.set_status(f"Localhost aktif profil yazilamadi: {exc}")
+            self.set_status(f"Failed to write localhost active profile: {exc}")
             return
 
         try:
             verified, verify_payload = self._verify_active_query(active_params)
         except Exception as exc:
-            self.set_status(f"Aktif profil yazildi ama dogrulanamadi: {exc}")
+            self.set_status(f"Active profile written but could not be verified: {exc}")
             self.append_output(json.dumps(active_result, indent=2, ensure_ascii=True))
             return
 
@@ -686,7 +686,7 @@ class EtaUiClient(tk.Tk):
                 "warning": "active_query write/verify mismatch",
             }
             self.append_output(json.dumps(output, indent=2, ensure_ascii=True))
-            self.set_status("Aktif profil yazildi ancak dogrulama tutarsiz.")
+            self.set_status("Active profile written but verification inconsistent.")
             return
 
         serial_port = self.arduino_port_var.get().strip()
@@ -709,10 +709,10 @@ class EtaUiClient(tk.Tk):
                     "serial_push": serial_result,
                 }
                 self.append_output(json.dumps(output, indent=2, ensure_ascii=True))
-                self.set_status(f"Aktif profil kaydedildi, seri gonderim OK: {serial_result.get('port', '')}")
+                self.set_status(f"Active profile saved, serial push OK: {serial_result.get('port', '')}")
                 return
             except Exception as exc:
-                self.set_status(f"Aktif profil kaydedildi ama seri gonderim hatali: {exc}")
+                self.set_status(f"Active profile saved but serial push failed: {exc}")
                 self.append_output(json.dumps(active_result, indent=2, ensure_ascii=True))
                 return
 
@@ -721,7 +721,7 @@ class EtaUiClient(tk.Tk):
             "active_query_verify": verify_payload.get("active_query", {}),
         }
         self.append_output(json.dumps(output, indent=2, ensure_ascii=True))
-        self.set_status("Aktif profil localhost'a yazildi. Arduino bir sonraki /eta isteginde bu veriyi alacak.")
+        self.set_status("Active profile written to localhost. Arduino will receive this data on next /eta request.")
 
     def on_close(self):
         if self.auto_refresh_job is not None:

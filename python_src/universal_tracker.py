@@ -93,15 +93,17 @@ class FeedClient:
 
     def fetch_trip_feeds(self) -> List[gtfs_realtime_pb2.FeedMessage]:
         feeds = []
-        for feed_url in self.config.mta_feeds.values():
+        for feed_name, feed_url in self.config.mta_feeds.items():
             try:
                 response = self.session.get(feed_url, timeout=6)
                 if response.status_code == 200:
                     feed = gtfs_realtime_pb2.FeedMessage()
                     feed.ParseFromString(response.content)
                     feeds.append(feed)
-            except Exception:
-                pass
+                else:
+                    print(f"[!] Feed {feed_name} returned HTTP {response.status_code}")
+            except Exception as exc:
+                print(f"[!] Feed {feed_name} fetch error: {exc}")
         return feeds
 
     def fetch_alert_feed(self) -> Optional[gtfs_realtime_pb2.FeedMessage]:
@@ -111,8 +113,10 @@ class FeedClient:
                 feed = gtfs_realtime_pb2.FeedMessage()
                 feed.ParseFromString(response.content)
                 return feed
-        except Exception:
-            pass
+            else:
+                print(f"[!] Alert feed returned HTTP {response.status_code}")
+        except Exception as exc:
+            print(f"[!] Alert feed fetch error: {exc}")
         return None
 
     def close(self):
