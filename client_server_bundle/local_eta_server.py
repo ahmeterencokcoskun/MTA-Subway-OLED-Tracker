@@ -1,5 +1,6 @@
 from typing import List, Optional
 import asyncio
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Query
 import uvicorn
@@ -20,6 +21,16 @@ ACTIVE_QUERY = {
     "direction": "N",
     "stop_ids": None,
 }
+METRICS = {
+    "requests_total": 0,
+    "errors_total": 0,
+    "last_success_ts": None,
+    "last_alert_ts": None,
+}
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def split_routes(raw_routes: str) -> List[str]:
@@ -117,68 +128,81 @@ def eta(
     fallback_eta1: str = Query("--"),
     fallback_eta2: str = Query("--"),
 ):
-    route_input = route if route is not None else ACTIVE_QUERY.get("route", "")
-    station_input = station if station else ACTIVE_QUERY.get("station", "JAMAICA")
-    direction_input = direction if direction else ACTIVE_QUERY.get("direction", "N")
-    stop_ids_input = stop_ids if stop_ids is not None else ACTIVE_QUERY.get("stop_ids")
+    METRICS["requests_total"] += 1
+    try:
+        route_input = route if route is not None else ACTIVE_QUERY.get("route", "")
+        station_input = station if station else ACTIVE_QUERY.get("station", "JAMAICA")
+        direction_input = direction if direction else ACTIVE_QUERY.get("direction", "N")
+        stop_ids_input = stop_ids if stop_ids is not None else ACTIVE_QUERY.get("stop_ids")
 
-    raw_route = (route_input or "").strip().upper()
-    route_clean = sanitize_for_packet(raw_route, 6)
-    station_clean = sanitize_for_packet(str(station_input).upper(), 14)
-    direction_clean = str(direction_input).strip().upper()
-    if direction_clean not in ("N", "S"):
-        raise HTTPException(status_code=400, detail="direction must be N or S")
+        raw_route = (route_input or "").strip().upper()
+        route_clean = sanitize_for_packet(raw_route, 6)
+        station_clean = sanitize_for_packet(str(station_input).upper(), 14)
+        direction_clean = str(direction_input).strip().upper()
+        if direction_clean not in ("N", "S"):
+            raise HTTPException(status_code=400, detail="direction must be N or S")
 
-    monitor_ids = build_monitor_ids(stop_ids_input, station_clean, direction_clean)
-    if not monitor_ids:
-        return {
-            "route": route_clean,
-            "eta1": fallback_eta1,
-            "eta2": fallback_eta2,
-            "station": station_clean,
-            "alert_flag": 0,
-            "alert_msg": "No details available",
-            "monitor_ids": [],
-        }
+        monitor_ids = build_monitor_ids(stop_ids_input, station_clean, direction_clean)
+        if not monitor_ids:
+            METRICS["last_success_ts"] = now_iso()
+            return {
+                "route": route_clean,
+                "eta1": fallback_eta1,
+                "eta2": fallback_eta2,
+                "station": station_clean,
+                "alert_flag": 0,
+                "alert_msg": "No details available",
+                "monitor_ids": [],
+            }
 
-    trip_feeds = feed_client.fetch_trip_feeds()
-    alert_feed = feed_client.fetch_alert_feed()
+        trip_feeds = feed_client.fetch_trip_feeds()
+        alert_feed = feed_client.fetch_alert_feed()
 
-    selected_route = route_clean
-    eta1 = fallback_eta1
-    eta2 = fallback_eta2
-    live_routes = []
+        selected_route = route_clean
+        eta1 = fallback_eta1
+        eta2 = fallback_eta2
+        live_routes = []
 
-    # Legacy behavior: if route is unknown, pick the nearest live route at this station.
-    if route_clean in AUTO_ROUTE_TOKENS:
-        live_routes = tracker_service.get_live_routes_at_stop(monitor_ids, trip_feeds)
-        if live_routes:
-            selected_route, eta1, eta2, _ = live_routes[0]
-    else:
-        eta1, eta2 = tracker_service.get_arrivals(monitor_ids, route_clean, trip_feeds)
-        if eta1 == "--":
+        # Legacy behavior: if route is unknown, pick the nearest live route at this station.
+        if route_clean in AUTO_ROUTE_TOKENS:
             live_routes = tracker_service.get_live_routes_at_stop(monitor_ids, trip_feeds)
             if live_routes:
                 selected_route, eta1, eta2, _ = live_routes[0]
+        else:
+            eta1, eta2 = tracker_service.get_arrivals(monitor_ids, route_clean, trip_feeds)
+            if eta1 == "--":
+                live_routes = tracker_service.get_live_routes_at_stop(monitor_ids, trip_feeds)
+                if live_routes:
+                    selected_route, eta1, eta2, _ = live_routes[0]
 
-    alert_route = selected_route if selected_route else route_clean
-    alert_msg = tracker_service.get_alert_details(alert_route, alert_feed)
-    alert_flag = 0 if alert_msg == "No details available" else 1
+        alert_route = selected_route if selected_route else route_clean
+        alert_msg = tracker_service.get_alert_details(alert_route, alert_feed)
+        alert_flag = 0 if alert_msg == "No details available" else 1
 
-    return {
-        "requested_route": route_clean,
-        "route": selected_route,
-        "eta1": eta1,
-        "eta2": eta2,
-        "station": station_clean,
-        "alert_flag": alert_flag,
-        "alert_msg": sanitize_for_packet(alert_msg, 200),
-        "monitor_ids": monitor_ids,
-        "live_routes": [
-            {"route": route_id, "eta1": r_eta1, "eta2": r_eta2}
-            for route_id, r_eta1, r_eta2, _ in live_routes[:8]
-        ],
-    }
+        METRICS["last_success_ts"] = now_iso()
+        if alert_flag == 1:
+            METRICS["last_alert_ts"] = METRICS["last_success_ts"]
+
+        return {
+            "requested_route": route_clean,
+            "route": selected_route,
+            "eta1": eta1,
+            "eta2": eta2,
+            "station": station_clean,
+            "alert_flag": alert_flag,
+            "alert_msg": sanitize_for_packet(alert_msg, 200),
+            "monitor_ids": monitor_ids,
+            "live_routes": [
+                {"route": route_id, "eta1": r_eta1, "eta2": r_eta2}
+                for route_id, r_eta1, r_eta2, _ in live_routes[:8]
+            ],
+        }
+    except HTTPException:
+        METRICS["errors_total"] += 1
+        raise
+    except Exception as exc:
+        METRICS["errors_total"] += 1
+        raise HTTPException(status_code=500, detail=f"eta processing error: {exc}")
 
 
 @app.get("/health")
@@ -221,6 +245,11 @@ def active_query():
     return {"active_query": ACTIVE_QUERY}
 
 
+@app.get("/metrics")
+def metrics():
+    return dict(METRICS)
+
+
 @app.post("/push_to_arduino")
 def push_to_arduino(
     route: str = Query(""),
@@ -232,7 +261,7 @@ def push_to_arduino(
     serial_port: Optional[str] = Query(None),
 ):
     if not serial_port or not serial_port.strip():
-        raise HTTPException(status_code=400, detail="serial_port gerekli (ornek: COM3)")
+        raise HTTPException(status_code=400, detail="serial_port is required (example: COM3)")
 
     cfg = TrackerConfig()
     cfg.arduino_port = serial_port.strip()
