@@ -12,22 +12,43 @@ const int GREEN = 3;
 const int YELLOW = 4;
 const int RED = 5;
 
+const unsigned long STATION_DISPLAY_MS = 10000;
+const unsigned long ALERT_DETAIL_MS = 5000;
+const unsigned long PACKET_TIMEOUT_MS = 35000;
+const unsigned long HEARTBEAT_PERIOD_MS = 3000;
+const unsigned long HEARTBEAT_PULSE_MS = 100;
+const int MAX_STATION_LEN = 20;
+const int MAX_ALERT_LEN = 200;
+const int CHARS_PER_LINE = 21;
+const int MAX_ALERT_LINES = 4;
+
+// Data flow: Python sends one CSV packet, MCU parses it and updates OLED + LEDs.
+
 Adafruit_SH1106G display = Adafruit_SH1106G(128, 64, &SPI, OLED_DC, OLED_RST, OLED_CS);
 
-String route;
-String eta1;
-String eta2;
-String st_name;
-String alert_msg;
+// Fixed-size buffers avoid heap fragmentation on long runtimes.
+char route[8] = "";
+char eta1[8] = "";
+char eta2[8] = "";
+char st_name[MAX_STATION_LEN + 1] = "";
 int hasAlert = 0;
+char alert_lines[12][CHARS_PER_LINE + 1];
+int total_alert_lines = 0;
+
 unsigned long lastPacketMs = 0;
 unsigned long lastBluePulseMs = 0;
 bool waitingScreenShown = false;
 
+enum State { WAITING, SHOW_STATION, SHOW_ALERT_TITLE, SHOW_ALERT_DETAIL };
+State currentState = WAITING;
+unsigned long stateEnteredMs = 0;
+
 void renderWaitingScreen();
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  // Keep serial parsing responsive if a packet is incomplete.
+  Serial.setTimeout(50);
 
   pinMode(BLUE, OUTPUT);
   pinMode(GREEN, OUTPUT);
@@ -49,88 +70,164 @@ void setup() {
 }
 
 void loop() {
+  // Always check serial first so new telemetry is not delayed.
   if (Serial.available() > 0) {
-    String packet = Serial.readStringUntil('\n');
-    packet.trim();
-
-    if (!processPacket(packet)) {
-      return;
+    char packetBuffer[256];
+    int len = Serial.readBytesUntil('\n', packetBuffer, sizeof(packetBuffer) - 1);
+    packetBuffer[len] = '\0';
+    
+    while(len > 0 && (packetBuffer[len-1] == '\r' || packetBuffer[len-1] == ' ' || packetBuffer[len-1] == '\n')) {
+      packetBuffer[--len] = '\0';
     }
 
-    lastPacketMs = millis();
-    waitingScreenShown = false;
+    if (len > 0 && processPacket(packetBuffer)) {
+      lastPacketMs = millis();
+      waitingScreenShown = false;
+      currentState = SHOW_STATION;
+      stateEnteredMs = millis();
+      renderStation();
+      updateTrafficLEDs();
+    }
+  }
 
-    // 1) Station and ETA screen
-    renderStation();
-    updateTrafficLEDs();
-    delay(10000);
+  if (millis() - lastPacketMs > PACKET_TIMEOUT_MS) {
+    currentState = WAITING;
+  }
 
-    if (hasAlert == 1) {
-      // 2) Alert title + red flash only
-      renderAlertTitle();
-      for (int i = 0; i < 4; i++) {
+  unsigned long elapsed = millis() - stateEnteredMs;
+
+  switch (currentState) {
+    case SHOW_STATION:
+      if (elapsed >= STATION_DISPLAY_MS) {
+        if (hasAlert == 1) {
+          currentState = SHOW_ALERT_TITLE;
+          stateEnteredMs = millis();
+          renderAlertTitle();
+        } else {
+          stateEnteredMs = millis();
+        }
+      }
+      break;
+    case SHOW_ALERT_TITLE:
+      // Non-blocking red LED pulse while alert header is visible.
+      if ((elapsed % 500) < 250) {
         digitalWrite(RED, HIGH);
-        delay(250);
+      } else {
         digitalWrite(RED, LOW);
-        delay(250);
       }
 
-      // 3) Alert details (extended)
-      renderAlertDetail();
-      delay(7000);
+      if (elapsed >= 2000) {
+        digitalWrite(RED, LOW);
+        currentState = SHOW_ALERT_DETAIL;
+        stateEnteredMs = millis();
+        renderAlertDetail(0);
+      }
+      break;
+    case SHOW_ALERT_DETAIL:
+      {
+        int currentScrollOffset = elapsed / 2000;
+        static int lastScrollOffset = -1;
+        if (currentScrollOffset != lastScrollOffset) {
+          lastScrollOffset = currentScrollOffset;
+          renderAlertDetail(currentScrollOffset);
+        }
+        
+        // Extend detail duration to let all lines scroll at least once.
+        unsigned long currentDuration = max((unsigned long)ALERT_DETAIL_MS, (unsigned long)(total_alert_lines * 2000UL));
+        
+        if (elapsed >= currentDuration) {
+          currentState = SHOW_STATION;
+          stateEnteredMs = millis();
+          lastScrollOffset = -1;
+          renderStation();
+          updateTrafficLEDs();
+        }
+      }
+      break;
+    case WAITING:
+      if (!waitingScreenShown) {
+        renderWaitingScreen();
+        waitingScreenShown = true;
+        
+        digitalWrite(RED, LOW);
+        digitalWrite(YELLOW, LOW);
+        digitalWrite(GREEN, LOW);
+      }
 
-      // Return to station screen after detail phase
-      renderStation();
-    }
-
-    digitalWrite(BLUE, LOW);
-  } else if (millis() - lastPacketMs > 30000) {
-    if (!waitingScreenShown) {
-      renderWaitingScreen();
-      waitingScreenShown = true;
-    }
-
-    digitalWrite(RED, LOW);
-    digitalWrite(YELLOW, LOW);
-    digitalWrite(GREEN, LOW);
-
-    // Soft heartbeat while waiting: brief pulse every ~3 seconds.
-    if (millis() - lastBluePulseMs >= 3000) {
-      lastBluePulseMs = millis();
-      digitalWrite(BLUE, HIGH);
-    } else if (millis() - lastBluePulseMs >= 60) {
-      digitalWrite(BLUE, LOW);
-    }
+      // Soft heartbeat while waiting: brief pulse every ~3 seconds.
+      if (millis() - lastBluePulseMs >= HEARTBEAT_PERIOD_MS) {
+        lastBluePulseMs = millis();
+        digitalWrite(BLUE, HIGH);
+      } else if (millis() - lastBluePulseMs >= HEARTBEAT_PULSE_MS) {
+        digitalWrite(BLUE, LOW);
+      }
+      break;
   }
 }
 
-bool processPacket(String p) {
-  // Format: Route,ETA1,ETA2,Flag,Station[,Message]
-  int f1 = p.indexOf(',');
-  int f2 = p.indexOf(',', f1 + 1);
-  int f3 = p.indexOf(',', f2 + 1);
-  int f4 = p.indexOf(',', f3 + 1);
-  int f5 = p.indexOf(',', f4 + 1);
+bool processPacket(char* p) {
+  // Packet format: Route,ETA1,ETA2,AlertFlag,Station[,Message]
+  char* token = strtok(p, ",");
+  if (!token) return false;
+  strncpy(route, token, sizeof(route) - 1);
+  route[sizeof(route) - 1] = '\0';
 
-  if (f1 < 0 || f2 < 0 || f3 < 0 || f4 < 0) {
-    return false;
-  }
+  token = strtok(NULL, ",");
+  if (!token) return false;
+  strncpy(eta1, token, sizeof(eta1) - 1);
+  eta1[sizeof(eta1) - 1] = '\0';
 
-  route = p.substring(0, f1);
-  eta1 = p.substring(f1 + 1, f2);
-  eta2 = p.substring(f2 + 1, f3);
-  hasAlert = p.substring(f3 + 1, f4).toInt();
+  token = strtok(NULL, ",");
+  if (!token) return false;
+  strncpy(eta2, token, sizeof(eta2) - 1);
+  eta2[sizeof(eta2) - 1] = '\0';
 
-  if (f5 > 0) {
-    st_name = p.substring(f4 + 1, f5);
-    alert_msg = p.substring(f5 + 1);
+  token = strtok(NULL, ",");
+  if (!token) return false;
+  hasAlert = atoi(token);
+
+  token = strtok(NULL, ",");
+  if (!token) return false;
+  strncpy(st_name, token, sizeof(st_name) - 1);
+  st_name[sizeof(st_name) - 1] = '\0';
+
+  // Read remaining tail as alert message payload.
+  token = strtok(NULL, ""); 
+  char alert_msg_buffer[MAX_ALERT_LEN + 1];
+  if (token) {
+    strncpy(alert_msg_buffer, token, sizeof(alert_msg_buffer) - 1);
+    alert_msg_buffer[sizeof(alert_msg_buffer) - 1] = '\0';
   } else {
-    st_name = p.substring(f4 + 1);
-    alert_msg = "No details available";
+    strcpy(alert_msg_buffer, "No details available");
   }
 
-  if (st_name.length() > 16) st_name = st_name.substring(0, 16);
-  if (alert_msg.length() > 84) alert_msg = alert_msg.substring(0, 84);
+  // Pre-split alert text into OLED-width lines for lightweight rendering.
+  total_alert_lines = 0;
+  int msg_len = strlen(alert_msg_buffer);
+  int start = 0;
+
+  while (start < msg_len && total_alert_lines < 12) {
+    int end_idx = start + CHARS_PER_LINE;
+    if (end_idx < msg_len) {
+      int split = end_idx;
+      while (split > start && alert_msg_buffer[split] != ' ') {
+        split--;
+      }
+      if (split > start) end_idx = split;
+    } else {
+      end_idx = msg_len;
+    }
+
+    int line_len = end_idx - start;
+    if (line_len > CHARS_PER_LINE) line_len = CHARS_PER_LINE;
+
+    strncpy(alert_lines[total_alert_lines], &alert_msg_buffer[start], line_len);
+    alert_lines[total_alert_lines][line_len] = '\0';
+    total_alert_lines++;
+
+    start = end_idx;
+    while (start < msg_len && alert_msg_buffer[start] == ' ') start++;
+  }
 
   return true;
 }
@@ -158,7 +255,7 @@ void renderStation() {
   display.fillCircle(14, 12, 11, SH110X_WHITE);
   display.setTextColor(SH110X_BLACK);
   display.setTextSize(2);
-  display.setCursor((route.length() > 1 ? 4 : 8), 5);
+  display.setCursor((strlen(route) > 1 ? 4 : 8), 5);
   display.print(route);
 
   display.drawLine(0, 27, 128, 27, SH110X_WHITE);
@@ -173,11 +270,11 @@ void renderStation() {
   display.setTextSize(2);
   display.setCursor(50, 32);
   display.print(eta1);
-  if (eta1 != "--") display.print("m");
+  if (strcmp(eta1, "--") != 0) display.print("m");
 
   display.setCursor(50, 50);
   display.print(eta2);
-  if (eta2 != "--") display.print("m");
+  if (strcmp(eta2, "--") != 0) display.print("m");
 
   display.display();
 }
@@ -193,7 +290,7 @@ void renderAlertTitle() {
   display.display();
 }
 
-void renderAlertDetail() {
+void renderAlertDetail(int startLineIndex) {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SH110X_WHITE);
@@ -202,30 +299,10 @@ void renderAlertDetail() {
   display.print("ALERT DETAILS:");
   display.drawLine(0, 10, 128, 10, SH110X_WHITE);
 
-  String msg = alert_msg;
-  if (msg.length() == 0 || msg == "No details available") {
-    msg = "No details available";
-  }
-
-  const int maxCharsPerLine = 21;
-  const int maxLines = 4;
-  int start = 0;
   int y = 15;
-
-  for (int line = 0; line < maxLines && start < msg.length(); line++) {
-    int end = start + maxCharsPerLine;
-    if (end < msg.length()) {
-      int split = msg.lastIndexOf(' ', end);
-      if (split > start) end = split;
-    }
-
-    String part = msg.substring(start, end);
-    part.trim();
+  for (int i = startLineIndex; i < startLineIndex + MAX_ALERT_LINES && i < total_alert_lines; i++) {
     display.setCursor(0, y);
-    display.print(part);
-
-    start = end;
-    while (start < msg.length() && msg.charAt(start) == ' ') start++;
+    display.print(alert_lines[i]);
     y += 12;
   }
 
@@ -238,11 +315,11 @@ void updateTrafficLEDs() {
   digitalWrite(YELLOW, LOW);
   digitalWrite(GREEN, LOW);
 
-  if (eta1 == "--") {
+  if (strcmp(eta1, "--") == 0) {
     return;
   }
 
-  int m = eta1.toInt();
+  int m = atoi(eta1);
   if (m <= 1) {
     digitalWrite(RED, HIGH);
   } else if (m <= 5) {
