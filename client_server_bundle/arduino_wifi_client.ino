@@ -19,6 +19,7 @@ const unsigned long HEARTBEAT_PERIOD_MS = 3000;
 const unsigned long HEARTBEAT_PULSE_MS = 120;
 const unsigned long HTTP_READ_TIMEOUT_MS = 5000;
 const unsigned long ALERT_PREVIEW_MS = 10000;
+const unsigned long STALE_DATA_MS = 90000;
 
 const size_t MAX_JSON_BODY = 768;
 const size_t MAX_ALERT_LEN = 200;
@@ -27,8 +28,8 @@ const size_t MAX_ALERT_LEN = 200;
 const char WIFI_SSID[] = "DESKTOP-75QM09J 4825";
 const char WIFI_PASSWORD[] = "M3k94#74";
 // Optional fallback network (used when primary SSID is unreachable).
-const char WIFI_SSID_2[] = "";
-const char WIFI_PASSWORD_2[] = "";
+const char WIFI_SSID_2[] = "SUPEROBLINE_Wİ-Fİ_1151";
+const char WIFI_PASSWORD_2[] = "mFnEm48J8f";
 
 // Local hotspot/LAN endpoint on your PC (192.168.137.1:8000).
 const bool USE_TLS = false;
@@ -47,11 +48,19 @@ char eta2[8] = "--";
 char station[24] = "REMOTE";
 char alertMsg[MAX_ALERT_LEN + 1] = "No details available";
 int alertFlag = 0;
+int lastHttpStatus = 0;
+bool lastJsonParseOk = true;
+unsigned long parseErrorCount = 0;
+char activeNetworkLabel[20] = "NONE";
 
 bool hasFreshData = false;
 unsigned long lastFetchMs = 0;
 unsigned long lastWifiAttemptMs = 0;
 unsigned long lastBluePulseMs = 0;
+unsigned long alertPreviewUntilMs = 0;
+unsigned long lastGoodFetchMs = 0;
+
+void renderStatus(const char *line1, const char *line2);
 
 bool connectToWiFi(const char *ssid, const char *password, const char *label) {
   if (!ssid || strlen(ssid) == 0) {
@@ -67,6 +76,8 @@ bool connectToWiFi(const char *ssid, const char *password, const char *label) {
   }
 
   if (status == WL_CONNECTED) {
+    strncpy(activeNetworkLabel, label, sizeof(activeNetworkLabel) - 1);
+    activeNetworkLabel[sizeof(activeNetworkLabel) - 1] = '\0';
     renderStatus("Wi-Fi connected", WiFi.localIP().toString().c_str());
     delay(700);
     return true;
@@ -109,10 +120,46 @@ void renderStatus(const char *line1, const char *line2) {
   display.display();
 }
 
+void renderApiFailScreen() {
+  display.clearDisplay();
+  display.setTextColor(SH110X_WHITE);
+  display.setTextSize(1);
+  display.setTextWrap(false);
+
+  String ssid = WiFi.SSID();
+  String ip = WiFi.localIP().toString();
+  String code = (lastHttpStatus > 0) ? String(lastHttpStatus) : String("N/A");
+
+  display.setCursor(0, 0);
+  display.print("API FAIL");
+  display.setCursor(0, 12);
+  display.print("NET:");
+  display.print(activeNetworkLabel);
+  display.setCursor(0, 24);
+  display.print("SSID:");
+  display.print(ssid.substring(0, 12));
+  display.setCursor(0, 36);
+  display.print("IP:");
+  display.print(ip.substring(0, 15));
+  display.setCursor(0, 48);
+  display.print("HTTP:");
+  display.print(code);
+
+  display.display();
+}
+
 void renderMainScreen() {
   display.clearDisplay();
   display.setTextColor(SH110X_WHITE);
   display.setTextWrap(false);
+
+  display.setTextSize(1);
+  display.setCursor(86, 0);
+  display.print(lastJsonParseOk ? "P_OK" : "P_ERR");
+  if (lastGoodFetchMs > 0 && (millis() - lastGoodFetchMs) >= STALE_DATA_MS) {
+    display.setCursor(86, 10);
+    display.print("STALE");
+  }
 
   display.setTextSize(1);
   display.setCursor(28, 5);
@@ -192,6 +239,14 @@ void renderAlertScreen() {
   }
 
   display.display();
+}
+
+void renderCurrentScreen() {
+  if (alertFlag == 1 && millis() < alertPreviewUntilMs) {
+    renderAlertScreen();
+  } else {
+    renderMainScreen();
+  }
 }
 
 bool ensureWiFiConnected() {
@@ -293,6 +348,8 @@ bool fetch_json_and_render() {
     return false;
   }
 
+  lastHttpStatus = 0;
+
   arduino::Client *clientPtr;
   if (USE_TLS) {
     clientPtr = &secureClient;
@@ -303,7 +360,7 @@ bool fetch_json_and_render() {
   arduino::Client &client = *clientPtr;
 
   if (!client.connect(API_HOST, API_PORT)) {
-    renderStatus("API connect failed", API_HOST);
+    renderApiFailScreen();
     return false;
   }
 
@@ -315,6 +372,11 @@ bool fetch_json_and_render() {
   client.println("User-Agent: UNO-R4-WiFi");
   client.println("Connection: close");
   client.println();
+
+  String statusLine = client.readStringUntil('\n');
+  if (statusLine.startsWith("HTTP/1.1 ") || statusLine.startsWith("HTTP/1.0 ")) {
+    lastHttpStatus = statusLine.substring(9, 12).toInt();
+  }
 
   char jsonBody[MAX_JSON_BODY];
   if (!readHttpResponseBody(client, jsonBody, sizeof(jsonBody))) {
@@ -331,12 +393,30 @@ bool fetch_json_and_render() {
   char tmpAlert[MAX_ALERT_LEN + 1] = "No details available";
   int tmpAlertFlag = 0;
 
-  extractJsonString(jsonBody, "route", tmpRoute, sizeof(tmpRoute));
-  extractJsonString(jsonBody, "eta1", tmpEta1, sizeof(tmpEta1));
-  extractJsonString(jsonBody, "eta2", tmpEta2, sizeof(tmpEta2));
-  extractJsonString(jsonBody, "station", tmpStation, sizeof(tmpStation));
-  extractJsonString(jsonBody, "alert_msg", tmpAlert, sizeof(tmpAlert));
+  bool gotRoute = extractJsonString(jsonBody, "route", tmpRoute, sizeof(tmpRoute));
+  bool gotEta1 = extractJsonString(jsonBody, "eta1", tmpEta1, sizeof(tmpEta1));
+  bool gotEta2 = extractJsonString(jsonBody, "eta2", tmpEta2, sizeof(tmpEta2));
+  bool gotStation = extractJsonString(jsonBody, "station", tmpStation, sizeof(tmpStation));
+  bool gotAlertMsg = extractJsonString(jsonBody, "alert_msg", tmpAlert, sizeof(tmpAlert));
   bool hasAlertFlag = extractJsonInt(jsonBody, "alert_flag", &tmpAlertFlag);
+  lastJsonParseOk = gotRoute && gotEta1 && gotEta2 && gotStation && gotAlertMsg && hasAlertFlag;
+  if (!lastJsonParseOk) {
+    parseErrorCount++;
+    Serial.print("WARN json parse miss #");
+    Serial.print(parseErrorCount);
+    Serial.print(" route=");
+    Serial.print(gotRoute ? "1" : "0");
+    Serial.print(" eta1=");
+    Serial.print(gotEta1 ? "1" : "0");
+    Serial.print(" eta2=");
+    Serial.print(gotEta2 ? "1" : "0");
+    Serial.print(" station=");
+    Serial.print(gotStation ? "1" : "0");
+    Serial.print(" alert_msg=");
+    Serial.print(gotAlertMsg ? "1" : "0");
+    Serial.print(" alert_flag=");
+    Serial.println(hasAlertFlag ? "1" : "0");
+  }
 
   // Fallback: if server flag cannot be parsed but message has content, still show alert.
   if (!hasAlertFlag) {
@@ -357,17 +437,21 @@ bool fetch_json_and_render() {
   strncpy(alertMsg, tmpAlert, sizeof(alertMsg) - 1);
   alertMsg[sizeof(alertMsg) - 1] = '\0';
   alertFlag = tmpAlertFlag;
+  lastGoodFetchMs = millis();
+
+  if (tmpAlertFlag == 1) {
+    alertPreviewUntilMs = millis() + ALERT_PREVIEW_MS;
+  } else {
+    alertPreviewUntilMs = 0;
+  }
 
   updateTrafficLedsFromEta();
-  if (tmpAlertFlag == 1) {
-    renderAlertScreen();
-    delay(ALERT_PREVIEW_MS);
-  }
-  renderMainScreen();
+  renderCurrentScreen();
   return true;
 }
 
 void setup() {
+  Serial.begin(115200);
   pinMode(BLUE, OUTPUT);
   pinMode(GREEN, OUTPUT);
   pinMode(YELLOW, OUTPUT);
@@ -384,7 +468,7 @@ void setup() {
 
   renderStatus("Booting", "Connecting Wi-Fi...");
   ensureWiFiConnected();
-  fetch_json_and_render();
+  hasFreshData = fetch_json_and_render();
   lastFetchMs = millis();
 }
 
@@ -392,6 +476,10 @@ void loop() {
   if (millis() - lastFetchMs >= FETCH_PERIOD_MS) {
     lastFetchMs = millis();
     hasFreshData = fetch_json_and_render();
+  }
+
+  if (hasFreshData) {
+    renderCurrentScreen();
   }
 
   if (!hasFreshData) {

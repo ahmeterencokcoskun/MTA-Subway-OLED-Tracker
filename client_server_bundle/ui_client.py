@@ -1,11 +1,15 @@
 import json
+import re
+import socket
 import subprocess
 import sys
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox, simpledialog, ttk
+from urllib.parse import urlparse
 
 import requests
 
@@ -14,7 +18,7 @@ class EtaUiClient(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("MTA ETA Client UI")
-        self.geometry("900x620")
+        self.geometry("1020x820")
 
         self.bundle_dir = Path(__file__).resolve().parent
         self.server_script = self.bundle_dir / "local_eta_server.py"
@@ -33,8 +37,32 @@ class EtaUiClient(tk.Tk):
         self.stop_ids_var = tk.StringVar(value="")
         self.arduino_port_var = tk.StringVar(value="")
 
+        self.auto_refresh_var = tk.BooleanVar(value=False)
+        self.refresh_interval_var = tk.StringVar(value="10")
+        self.refresh_success = 0
+        self.refresh_fail = 0
+        self.auto_refresh_job = None
+        self.last_update_var = tk.StringVar(value="-")
+
+        self.alert_history = []
+        self.alert_only_var = tk.BooleanVar(value=False)
+
+        self.metrics_var = tk.StringVar(value="metrics: -")
+
+        self.api_profiles = {
+            "localhost": "http://127.0.0.1:8000",
+            "hotspot": "http://192.168.137.1:8000",
+            "home-lan": "http://192.168.1.228:8000",
+        }
+        self.api_profile_var = tk.StringVar(value="localhost")
+
+        self.favorites_file = self.bundle_dir / "ui_favorites.json"
+        self.favorites = {}
+        self.favorite_var = tk.StringVar(value="")
+
         self.status_var = tk.StringVar(value="Ready")
         self._build_ui()
+        self._load_favorites()
 
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -46,12 +74,26 @@ class EtaUiClient(tk.Tk):
         server_box.pack(fill=tk.X, pady=(0, 10))
 
         ttk.Label(server_box, text="Base URL").grid(row=0, column=0, sticky="w")
-        ttk.Entry(server_box, textvariable=self.base_url_var, width=42).grid(row=0, column=1, sticky="we", padx=6)
+        ttk.Entry(server_box, textvariable=self.base_url_var, width=40).grid(row=0, column=1, sticky="we", padx=6)
         ttk.Button(server_box, text="Start Server", command=self.start_server).grid(row=0, column=2, padx=4)
         ttk.Button(server_box, text="Stop Server", command=self.stop_server).grid(row=0, column=3, padx=4)
         ttk.Button(server_box, text="Health", command=self.check_health).grid(row=0, column=4, padx=4)
-        ttk.Button(server_box, text="Hatlari Ogren", command=self.learn_lines).grid(row=0, column=5, padx=4)
-        ttk.Button(server_box, text="Duraklari Yukle", command=self.load_stations).grid(row=0, column=6, padx=4)
+        ttk.Button(server_box, text="Metrics", command=self.refresh_metrics).grid(row=0, column=5, padx=4)
+
+        ttk.Label(server_box, text="API Profile").grid(row=1, column=0, sticky="w", pady=(8, 0))
+        ttk.Combobox(
+            server_box,
+            textvariable=self.api_profile_var,
+            values=list(self.api_profiles.keys()),
+            width=12,
+            state="readonly",
+        ).grid(row=1, column=1, sticky="w", pady=(8, 0), padx=6)
+        ttk.Button(server_box, text="Apply Profile", command=self.apply_api_profile).grid(row=1, column=2, padx=4, pady=(8, 0))
+        ttk.Button(server_box, text="Port Inspector", command=self.inspect_port_8000).grid(row=1, column=3, padx=4, pady=(8, 0))
+        ttk.Button(server_box, text="Kill Port 8000", command=self.kill_port_8000).grid(row=1, column=4, padx=4, pady=(8, 0))
+        ttk.Button(server_box, text="Export Logs", command=self.export_logs).grid(row=1, column=5, padx=4, pady=(8, 0))
+
+        ttk.Label(server_box, textvariable=self.metrics_var, anchor="w").grid(row=2, column=0, columnspan=6, sticky="we", pady=(8, 0))
         server_box.columnconfigure(1, weight=1)
 
         query_box = ttk.LabelFrame(root, text="ETA Query", padding=10)
@@ -85,11 +127,39 @@ class EtaUiClient(tk.Tk):
         ttk.Button(query_box, text="Arduinoya Gonder", command=self.send_to_arduino).grid(row=3, column=2, columnspan=2, sticky="we", pady=(12, 0), padx=(6, 6))
         ttk.Button(query_box, text="Hat+Durak Listesi", command=self.show_catalog).grid(row=3, column=4, columnspan=2, sticky="we", pady=(12, 0))
 
+        ttk.Checkbutton(query_box, text="Auto Refresh", variable=self.auto_refresh_var, command=self.toggle_auto_refresh).grid(row=4, column=0, sticky="w", pady=(10, 0))
+        ttk.Label(query_box, text="Interval").grid(row=4, column=1, sticky="e", pady=(10, 0))
+        ttk.Combobox(
+            query_box,
+            textvariable=self.refresh_interval_var,
+            values=["5", "10", "20"],
+            width=5,
+            state="readonly",
+        ).grid(row=4, column=2, sticky="w", pady=(10, 0), padx=(6, 0))
+        ttk.Label(query_box, textvariable=self.last_update_var).grid(row=4, column=3, columnspan=3, sticky="w", pady=(10, 0))
+
+        fav_box = ttk.LabelFrame(root, text="Favoriler", padding=10)
+        fav_box.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(fav_box, text="Favorite").grid(row=0, column=0, sticky="w")
+        self.favorite_combo = ttk.Combobox(fav_box, textvariable=self.favorite_var, width=28)
+        self.favorite_combo.grid(row=0, column=1, padx=6, sticky="w")
+        ttk.Button(fav_box, text="Save Current", command=self.save_current_favorite).grid(row=0, column=2, padx=4)
+        ttk.Button(fav_box, text="Load", command=self.load_selected_favorite).grid(row=0, column=3, padx=4)
+        ttk.Button(fav_box, text="Delete", command=self.delete_selected_favorite).grid(row=0, column=4, padx=4)
+
         output_box = ttk.LabelFrame(root, text="Response", padding=10)
         output_box.pack(fill=tk.BOTH, expand=True)
 
-        self.output = tk.Text(output_box, wrap=tk.WORD, font=("Consolas", 10), height=20)
+        self.output = tk.Text(output_box, wrap=tk.WORD, font=("Consolas", 10), height=14)
         self.output.pack(fill=tk.BOTH, expand=True)
+
+        alerts_box = ttk.LabelFrame(root, text="Alert Gecmisi", padding=10)
+        alerts_box.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+
+        ttk.Checkbutton(alerts_box, text="Sadece alertli", variable=self.alert_only_var, command=self.refresh_alert_history_view).pack(anchor="w")
+        self.alert_text = tk.Text(alerts_box, wrap=tk.WORD, font=("Consolas", 9), height=8)
+        self.alert_text.pack(fill=tk.BOTH, expand=True)
 
         status_bar = ttk.Label(root, textvariable=self.status_var, anchor="w")
         status_bar.pack(fill=tk.X, pady=(10, 0))
@@ -169,10 +239,189 @@ class EtaUiClient(tk.Tk):
         names = [item["name"] for item in self.station_catalog]
         self.station_combo["values"] = names
 
+    def _parse_base_url(self):
+        raw = self.base_url_var.get().strip()
+        parsed = urlparse(raw)
+        host = parsed.hostname or "127.0.0.1"
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        return host, port
+
+    def _is_port_in_use(self, port):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            sock.bind(("0.0.0.0", port))
+            return False
+        except OSError:
+            return True
+        finally:
+            sock.close()
+
+    def _verify_active_query(self, expected):
+        payload = self._get_json("/active_query", timeout=8)
+        active = payload.get("active_query", {})
+
+        expected_norm = {
+            "route": (expected.get("route") or "").strip().upper(),
+            "station": (expected.get("station") or "").strip().upper(),
+            "direction": (expected.get("direction") or "").strip().upper(),
+            "stop_ids": (expected.get("stop_ids") or "").strip().upper() or None,
+        }
+        active_norm = {
+            "route": str(active.get("route") or "").strip().upper(),
+            "station": str(active.get("station") or "").strip().upper(),
+            "direction": str(active.get("direction") or "").strip().upper(),
+            "stop_ids": str(active.get("stop_ids") or "").strip().upper() or None,
+        }
+        return expected_norm == active_norm, payload
+
+    def _load_favorites(self):
+        if self.favorites_file.exists():
+            try:
+                self.favorites = json.loads(self.favorites_file.read_text(encoding="utf-8"))
+            except Exception:
+                self.favorites = {}
+        else:
+            self.favorites = {}
+        self.favorite_combo["values"] = sorted(self.favorites.keys())
+
+    def _save_favorites(self):
+        self.favorites_file.write_text(json.dumps(self.favorites, indent=2, ensure_ascii=True), encoding="utf-8")
+        self.favorite_combo["values"] = sorted(self.favorites.keys())
+
+    def save_current_favorite(self):
+        name = simpledialog.askstring("Save Favorite", "Favorite name:")
+        if not name:
+            return
+        self.favorites[name] = {
+            "route": self.route_var.get().strip(),
+            "station": self.station_var.get().strip(),
+            "direction": self.direction_var.get().strip().upper(),
+            "stop_ids": self.stop_ids_var.get().strip(),
+        }
+        self._save_favorites()
+        self.favorite_var.set(name)
+        self.set_status(f"Favorite saved: {name}")
+
+    def load_selected_favorite(self):
+        name = self.favorite_var.get().strip()
+        fav = self.favorites.get(name)
+        if not fav:
+            self.set_status("Favorite not found.")
+            return
+        self.route_var.set(fav.get("route", ""))
+        self.station_var.set(fav.get("station", ""))
+        self.direction_var.set(fav.get("direction", "N"))
+        self.stop_ids_var.set(fav.get("stop_ids", ""))
+        self.set_status(f"Favorite loaded: {name}")
+
+    def delete_selected_favorite(self):
+        name = self.favorite_var.get().strip()
+        if not name or name not in self.favorites:
+            return
+        del self.favorites[name]
+        self._save_favorites()
+        self.favorite_var.set("")
+        self.set_status(f"Favorite deleted: {name}")
+
+    def apply_api_profile(self):
+        profile = self.api_profile_var.get().strip()
+        url = self.api_profiles.get(profile)
+        if not url:
+            return
+        self.base_url_var.set(url)
+        self.set_status(f"API profile applied: {profile}")
+
+    def _inspect_port_8000_data(self):
+        output = subprocess.check_output(["netstat", "-ano", "-p", "tcp"], text=True, stderr=subprocess.STDOUT)
+        lines = output.splitlines()
+        pids = set()
+        for line in lines:
+            if ":8000" in line and "LISTENING" in line.upper():
+                m = re.search(r"(\d+)\s*$", line.strip())
+                if m:
+                    pids.add(int(m.group(1)))
+        details = []
+        for pid in sorted(pids):
+            try:
+                info = subprocess.check_output(["tasklist", "/FI", f"PID eq {pid}", "/V"], text=True, stderr=subprocess.STDOUT)
+            except Exception as exc:
+                info = f"tasklist failed for PID {pid}: {exc}"
+            details.append({"pid": pid, "tasklist": info})
+        return details
+
+    def inspect_port_8000(self):
+        try:
+            details = self._inspect_port_8000_data()
+            if not details:
+                self.append_output("No LISTENING process on port 8000.")
+                self.set_status("Port 8000 bos.")
+                return
+            self.append_output(json.dumps(details, indent=2, ensure_ascii=True))
+            self.set_status(f"Port 8000 inspector: {len(details)} process found.")
+        except Exception as exc:
+            self.set_status(f"Port inspector failed: {exc}")
+
+    def kill_port_8000(self):
+        try:
+            details = self._inspect_port_8000_data()
+            killed = []
+            for item in details:
+                pid = item["pid"]
+                subprocess.run(["taskkill", "/PID", str(pid), "/F"], check=False, capture_output=True, text=True)
+                killed.append(pid)
+            self.append_output(json.dumps({"killed_pids": killed}, indent=2, ensure_ascii=True))
+            self.set_status(f"Killed listeners on port 8000: {killed}")
+        except Exception as exc:
+            self.set_status(f"Kill port failed: {exc}")
+
+    def export_logs(self):
+        try:
+            exports_dir = self.bundle_dir / "exports"
+            exports_dir.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            out_file = exports_dir / f"debug_export_{ts}.json"
+
+            try:
+                active_query = self._get_json("/active_query", timeout=6)
+            except Exception:
+                active_query = {"error": "unavailable"}
+            try:
+                metrics = self._get_json("/metrics", timeout=6)
+            except Exception:
+                metrics = {"error": "unavailable"}
+
+            payload = {
+                "exported_at": ts,
+                "base_url": self.base_url_var.get().strip(),
+                "query": {
+                    "route": self.route_var.get().strip(),
+                    "station": self.station_var.get().strip(),
+                    "direction": self.direction_var.get().strip().upper(),
+                    "stop_ids": self.stop_ids_var.get().strip(),
+                },
+                "refresh": {
+                    "success": self.refresh_success,
+                    "fail": self.refresh_fail,
+                    "last_update": self.last_update_var.get(),
+                },
+                "last_eta_payload": self.last_eta_payload,
+                "active_query": active_query,
+                "metrics": metrics,
+                "alert_history": self.alert_history,
+                "server_logs": self.server_logs,
+            }
+            out_file.write_text(json.dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
+            self.set_status(f"Exported logs: {out_file.name}")
+            self.append_output(f"Exported: {out_file}")
+        except Exception as exc:
+            self.set_status(f"Export failed: {exc}")
+
     def start_server(self):
         if self.server_process is not None and self.server_process.poll() is None:
             self.set_status("Server already running.")
             return
+
+        host, port = self._parse_base_url()
 
         try:
             health_url = f"{self.base_url_var.get().rstrip('/')}/health"
@@ -182,6 +431,17 @@ class EtaUiClient(tk.Tk):
                 return
         except Exception:
             pass
+
+        if self._is_port_in_use(port):
+            self.set_status(
+                f"Port {port} kullanimda ama {host} uzerinden health yanit vermiyor. "
+                "Muhtemel cakisan process var."
+            )
+            self.append_output(
+                "Port conflict detected. Stop the existing process on port "
+                f"{port} or adjust Base URL before starting server."
+            )
+            return
 
         if not self.server_script.exists():
             messagebox.showerror("Error", f"Server script not found: {self.server_script}")
@@ -233,8 +493,25 @@ class EtaUiClient(tk.Tk):
             payload = response.json()
             self.append_output(json.dumps(payload, indent=2, ensure_ascii=True))
             self.set_status("Health check OK.")
+            self.refresh_metrics()
         except Exception as exc:
             self.set_status(f"Health check failed: {exc}")
+
+    def refresh_metrics(self):
+        try:
+            m = self._get_json("/metrics", timeout=8)
+            self.metrics_var.set(
+                "metrics: requests={requests_total} errors={errors_total} last_success={last_success_ts} last_alert={last_alert_ts}".format(
+                    **{
+                        "requests_total": m.get("requests_total", 0),
+                        "errors_total": m.get("errors_total", 0),
+                        "last_success_ts": m.get("last_success_ts", "-"),
+                        "last_alert_ts": m.get("last_alert_ts", "-"),
+                    }
+                )
+            )
+        except Exception:
+            self.metrics_var.set("metrics: unavailable")
 
     def learn_lines(self):
         try:
@@ -271,7 +548,6 @@ class EtaUiClient(tk.Tk):
             if self.route_var.get().strip().upper() not in station_routes:
                 self.route_var.set("")
 
-        # Keep query bound to the selected station by always refreshing its stop IDs.
         self.stop_ids_var.set(",".join(station.get("stop_ids", [])))
 
     def show_catalog(self):
@@ -289,7 +565,32 @@ class EtaUiClient(tk.Tk):
         self.append_output(json.dumps(summary, indent=2, ensure_ascii=True))
         self.set_status("Hat ve durak katalogu gosterildi (onizleme).")
 
-    def fetch_eta(self):
+    def _record_alert_history(self, payload):
+        entry = {
+            "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "route": payload.get("route", ""),
+            "station": payload.get("station", ""),
+            "alert_flag": int(payload.get("alert_flag", 0)),
+            "alert_msg": payload.get("alert_msg", ""),
+        }
+        self.alert_history.append(entry)
+        self.alert_history = self.alert_history[-20:]
+        self.refresh_alert_history_view()
+
+    def refresh_alert_history_view(self):
+        self.alert_text.delete("1.0", tk.END)
+        show_alert_only = self.alert_only_var.get()
+        rows = []
+        for item in self.alert_history:
+            if show_alert_only and int(item.get("alert_flag", 0)) != 1:
+                continue
+            rows.append(
+                f"[{item.get('ts')}] {item.get('route')} @ {item.get('station')} | "
+                f"alert={item.get('alert_flag')} | {item.get('alert_msg')}"
+            )
+        self.alert_text.insert(tk.END, "\n".join(rows) if rows else "(no alert history)")
+
+    def fetch_eta(self, from_auto=False):
         url = f"{self.base_url_var.get().rstrip('/')}/eta"
         params = {
             "station": self.station_var.get().strip(),
@@ -309,13 +610,49 @@ class EtaUiClient(tk.Tk):
             response.raise_for_status()
             payload = response.json()
             self.last_eta_payload = payload
-            self.append_output(json.dumps(payload, indent=2, ensure_ascii=True))
-            self.set_status("ETA fetched successfully.")
+            self._record_alert_history(payload)
+            if not from_auto:
+                self.append_output(json.dumps(payload, indent=2, ensure_ascii=True))
+            self.refresh_success += 1
+            self.last_update_var.set(
+                f"Last update: {datetime.now().strftime('%H:%M:%S')} | OK={self.refresh_success} FAIL={self.refresh_fail}"
+            )
+            self.set_status("ETA fetched successfully." if not from_auto else "Auto refresh OK")
+            self.refresh_metrics()
+            return payload
         except Exception as exc:
+            self.refresh_fail += 1
+            self.last_update_var.set(
+                f"Last update: {datetime.now().strftime('%H:%M:%S')} | OK={self.refresh_success} FAIL={self.refresh_fail}"
+            )
             self.set_status(f"ETA request failed: {exc}")
+            return None
+
+    def toggle_auto_refresh(self):
+        if self.auto_refresh_var.get():
+            self.set_status("Auto refresh enabled.")
+            self._schedule_auto_refresh()
+        else:
+            if self.auto_refresh_job is not None:
+                self.after_cancel(self.auto_refresh_job)
+                self.auto_refresh_job = None
+            self.set_status("Auto refresh disabled.")
+
+    def _schedule_auto_refresh(self):
+        if not self.auto_refresh_var.get():
+            return
+        try:
+            seconds = int(self.refresh_interval_var.get().strip())
+        except Exception:
+            seconds = 10
+        seconds = max(5, seconds)
+        self.auto_refresh_job = self.after(seconds * 1000, self._auto_refresh_tick)
+
+    def _auto_refresh_tick(self):
+        self.fetch_eta(from_auto=True)
+        self._schedule_auto_refresh()
 
     def send_to_arduino(self):
-        # Primary flow: write current UI selection as active localhost query for WiFi Arduino polling.
         active_params = {
             "route": self.route_var.get().strip(),
             "station": self.station_var.get().strip(),
@@ -335,6 +672,23 @@ class EtaUiClient(tk.Tk):
             self.set_status(f"Localhost aktif profil yazilamadi: {exc}")
             return
 
+        try:
+            verified, verify_payload = self._verify_active_query(active_params)
+        except Exception as exc:
+            self.set_status(f"Aktif profil yazildi ama dogrulanamadi: {exc}")
+            self.append_output(json.dumps(active_result, indent=2, ensure_ascii=True))
+            return
+
+        if not verified:
+            output = {
+                "write_result": active_result,
+                "verify_result": verify_payload,
+                "warning": "active_query write/verify mismatch",
+            }
+            self.append_output(json.dumps(output, indent=2, ensure_ascii=True))
+            self.set_status("Aktif profil yazildi ancak dogrulama tutarsiz.")
+            return
+
         serial_port = self.arduino_port_var.get().strip()
         if serial_port:
             payload = self.last_eta_payload or {}
@@ -349,7 +703,11 @@ class EtaUiClient(tk.Tk):
             }
             try:
                 serial_result = self._get_json("/push_to_arduino", params=push_params, timeout=12)
-                output = {"active_query": active_result.get("active_query", {}), "serial_push": serial_result}
+                output = {
+                    "active_query": active_result.get("active_query", {}),
+                    "active_query_verify": verify_payload.get("active_query", {}),
+                    "serial_push": serial_result,
+                }
                 self.append_output(json.dumps(output, indent=2, ensure_ascii=True))
                 self.set_status(f"Aktif profil kaydedildi, seri gonderim OK: {serial_result.get('port', '')}")
                 return
@@ -358,10 +716,18 @@ class EtaUiClient(tk.Tk):
                 self.append_output(json.dumps(active_result, indent=2, ensure_ascii=True))
                 return
 
-        self.append_output(json.dumps(active_result, indent=2, ensure_ascii=True))
+        output = {
+            "active_query": active_result.get("active_query", {}),
+            "active_query_verify": verify_payload.get("active_query", {}),
+        }
+        self.append_output(json.dumps(output, indent=2, ensure_ascii=True))
         self.set_status("Aktif profil localhost'a yazildi. Arduino bir sonraki /eta isteginde bu veriyi alacak.")
 
     def on_close(self):
+        if self.auto_refresh_job is not None:
+            self.after_cancel(self.auto_refresh_job)
+            self.auto_refresh_job = None
+
         if self.server_process is not None and self.server_process.poll() is None:
             if messagebox.askyesno("Exit", "Server is running. Stop server and exit?"):
                 self.stop_server()
@@ -374,4 +740,5 @@ if __name__ == "__main__":
     app = EtaUiClient()
     app.after(300, app.learn_lines)
     app.after(700, app.load_stations)
+    app.after(900, app.refresh_metrics)
     app.mainloop()
